@@ -1,0 +1,42 @@
+version: "3"
+
+services:
+  hive-server:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    env_file:
+      - ./hadoop-hive.env
+    depends_on:
+      - hive-metastore
+    environment:
+      HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://hive-metastore/metastore"
+      SERVICE_PRECONDITION: "hive-metastore:9083"
+    ports:
+      - "9200:10000"
+    networks:
+      - hadoop_base
+  hive-metastore:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    env_file:
+      - ./hadoop-hive.env
+    depends_on:
+      - hive-metastore-postgresql
+    command: /opt/hive/bin/hive --service metastore
+    environment:
+      SERVICE_PRECONDITION: "namenode:9000 datanode:9864 hive-metastore-postgresql:5432"
+    ports:
+      - "9083:9083"
+    networks:
+      - hadoop_base
+  hive-metastore-postgresql:
+    image: bde2020/hive-metastore-postgresql:2.3.0
+    networks:
+      - hadoop_base
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
+
+networks:
+  hadoop_base:
+    external:
+      name: hadoop_base
